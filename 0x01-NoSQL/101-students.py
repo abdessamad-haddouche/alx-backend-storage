@@ -6,16 +6,8 @@ list_all = __import__('8-all').list_all
 insert_school = __import__('9-insert_school').insert_school
 
 
-def top_std(mongo_collection):
-    '''
-    Returns all students sorted by average score
-
-    Args:
-        mongo_collection: pymongo collection object
-
-    Returns:
-        list of students sorted by average score
-    '''
+def top_students(mongo_collection):
+    """function that returns all students sorted by average score"""
     return mongo_collection.aggregate([
         {"$project":
          {"name": "$name",
@@ -28,7 +20,7 @@ def top_std(mongo_collection):
 
 if __name__ == "__main__":
     client = MongoClient('mongodb://127.0.0.1:27017')
-    std_colls = client.my_db.students
+    students_collection = client.my_db.students
 
     j_stds = [
         {'name': "John", 'topics': [{'title': "Algo", 'score': 10.3}, {
@@ -42,15 +34,15 @@ if __name__ == "__main__":
         {'name': "Julia", 'topics': [{'title': "Algo", 'score': 10.5}, {
             'title': "C", 'score': 10.2}, {'title': "Python", 'score': 10.1}]}
     ]
-    for j_std in j_stds:
-        insert_school(std_colls, **j_std)
+    for j_student in j_stds:
+        insert_school(students_collection, **j_student)
 
-    stds = list_all(std_colls)
-    for std in stds:
-        print("[{}] {} - {}".format(std.get('_id'),
-              std.get('name'), std.get('topics')))
+    students = list_all(students_collection)
+    for student in students:
+        print("[{}] {} - {}".format(student.get('_id'),
+              student.get('name'), student.get('topics')))
 
-    top_std = top_std(std_colls)
-    for std in top_std:
-        print("[{}] {} => {}".format(std.get('_id'),
-              std.get('name'), std.get('averageScore')))
+    top_students = top_students(students_collection)
+    for student in top_students:
+        print("[{}] {} => {}".format(student.get('_id'),
+              student.get('name'), student.get('averageScore')))
