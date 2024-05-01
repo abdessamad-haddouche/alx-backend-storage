@@ -84,14 +84,19 @@ def replay(method: Callable) -> None:
     Returns:
         None
     '''
-    key = method.__qualname__
-    all_data = redis.Redis()
-    history = all_data.get(key).decode("utf-8")
-    print("{} was called {} times:".format(key, history))
-    inps = all_data.lrange(key + ":inputs", 0, -1)
-    outps = all_data.lrange(key + ":outputs", 0, -1)
-    for key, value in zip(inps, outps):
-        print(f"{key}(*{key.decode('utf-8')}) -> {value.decode('utf-8')}")
+    inp_k = "{}:inputs".format(method.__qualname__)
+    outp_k = "{}:outputs".format(method.__qualname__)
+
+    inp = method.__self__._redis.lrange(inp_k, 0, -1)
+    outp = method.__self__._redis.lrange(outp_k, 0, -1)
+
+    print("{} was called {} times:".format(method.__qualname__, len(inp)))
+    for inp, out in zip(inp, outp):
+        print(
+            "{}(*{}) -> {}".format(
+                method.__qualname__, inp.decode("utf-8"), out.decode("utf-8")
+            )
+        )
 
 
 class Cache:
