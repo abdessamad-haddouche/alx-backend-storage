@@ -1,31 +1,38 @@
 #!/usr/bin/env python3
-
+'''A module with tools for request caching and tracking.
 '''
-This module contains a function that gets the content of a webpage and caches
-it
-'''
-
 import redis
 import requests
-from typing import Callable
 from functools import wraps
-
-cache = redis.Redis()
-counter = 0
+from typing import Callable
 
 
+redis_store = redis.Redis()
+'''The module-level Redis instance.
+'''
+
+
+def data_cacher(method: Callable) -> Callable:
+    '''Caches the output of fetched data.
+    '''
+    @wraps(method)
+    def invoker(url) -> str:
+        '''The wrapper function for caching the output.
+        '''
+        redis_store.incr(f'count:{url}')
+        result = redis_store.get(f'result:{url}')
+        if result:
+            return result.decode('utf-8')
+        result = method(url)
+        redis_store.set(f'count:{url}', 0)
+        redis_store.setex(f'result:{url}', 10, result)
+        return result
+    return invoker
+
+
+@data_cacher
 def get_page(url: str) -> str:
+    '''Returns the content of a URL after caching the request's response,
+    and tracking the request.
     '''
-    This function gets the content of a webpage and caches it
-
-    Args:
-        url (str): The url of the webpage
-
-    Returns:
-        str: The content of the webpage
-    '''
-    cache.set(f"cached:{url}", counter)
-    response = requests.get(url)
-    cache.incr(f"count:{url}")
-    cache.setex(f"count:{url}", 10, cache.get(f"cached:{url}"))
-    return response.text
+    return requests.get(url).text
